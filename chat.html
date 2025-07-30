@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lightchat 聊天</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            height: 100vh;
+            display: flex;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 左侧边栏 */
+        .sidebar {
+            width: 300px;
+            background-color: #ededed;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            padding: 15px;
+            background-color: #07C160;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .search-bar {
+            padding: 10px;
+            background-color: #f5f5f5;
+        }
+        
+        #search-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            outline: none;
+        }
+        
+        .tab-bar {
+            display: flex;
+            background-color: #f5f5f5;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active  {
+            border-bottom: 2px solid #07C160;
+            color: #07C160;
+            font-weight: bold;
+        }
+        
+        .contact-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .contact {
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .contact:hover {
+            background-color: #e6e6e6;
+        }
+        
+        .contact.active  {
+            background-color: #d4edda;
+        }
+        
+        .contact-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #07C160;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        
+        .contact-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .contact-name {
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .contact-lastmsg {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .contact-time {
+            font-size: 11px;
+            color: #999;
+        }
+        
+        .group-avatar {
+            background-color: #17a2b8;
+        }
+        
+        /* 右侧聊天区域 */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #f0f0f0;
+        }
+        
+        .chat-header {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+        }
+        
+        .chat-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .chat-type {
+            font-size: 12px;
+            color: #666;
+            margin-left: 10px;
+        }
+        
+        .messages-container {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #e5ddd5;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AkEEjIZYJ3VJQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAANElEQVQ4y2NgGAXDFmzatMmKAQ38f2Qb+OjRI0Y08P+RbSCKZQwMDKOPjVFAH4AAQkZHRwcAlCkQ8QdQn2AAAAAASUVORK5CYII=');
+        }
+        
+        .message {
+            max-width: 70%;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .message-received {
+            align-self: flex-start;
+            background-color: white;
+            border-top-left-radius: 0;
+            margin-right: auto;
+        }
+        
+        .message-sent {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            border-top-right-radius: 0;
+            margin-left: auto;
+        }
+        
+        .message-sender {
+            font-weight: bold;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .input-area {
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-top: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+        }
+        
+        #message-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            resize: none;
+            max-height: 100px;
+            min-height: 40px;
+        }
+        
+        #send-btn {
+            margin-left: 10px;
+            padding: 10px 15px;
+            background-color: #07C160;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        /* 新建群聊弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 400px;
+            max-width: 90%;
+            padding: 20px;
+        }
+        
+        .modal-header {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .modal-btn {
+            padding: 8px 15px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .modal-btn-primary {
+            background-color: #07C160;
+            color: white;
+        }
+        
+        .modal-btn-secondary {
+            background-color: #f5f5f5;
+        }
+        
+        .user-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .user-checkbox input {
+            margin-right: 10px;
+        }
+        
+        .group-name-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+            <div class="header">多群聊和私聊系统</div>
+            
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="搜索">
+            </div>
+            
+            <div class="tab-bar">
+                <div class="tab active" id="chat-tab">聊天</div>
+                <div class="tab" id="contact-tab">联系人</div>
+            </div>
+            
+            <div class="contact-list" id="contact-list">
+                <!-- 聊天列表将在这里动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 右侧聊天区域 -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-title" id="current-chat-title">请选择聊天</div>
+                <div class="chat-type" id="current-chat-type"></div>
+            </div>
+            
+            <div class="messages-container" id="messages-container">
+                <!-- 消息将在这里动态生成 -->
+                <div style="text-align: center; color: #666; margin-top: 50px;">
+                    请从左侧选择聊天
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <textarea id="message-input" placeholder="输入消息..." rows="1"></textarea>
+                <button id="send-btn">发送</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新建群聊弹窗 -->
+    <div class="modal" id="new-group-modal">
+        <div class="modal-content">
+            <div class="modal-header">新建群聊</div>
+            <div class="modal-body">
+                <input type="text" id="group-name-input" class="group-name-input" placeholder="输入群聊名称">
+                <div id="user-list-container">
+                    <!-- 用户列表将在这里动态生成 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="cancel-group-btn">取消</button>
+                <button class="modal-btn modal-btn-primary" id="create-group-btn">创建</button>
+            </div>
+        </div>
+    </div>
+ 
+    <script>
+        // 全局变量 
+        let currentUser = {
+            id: localStorage.getItem('userId'), 
+            username: localStorage.getItem('username') 
+        };
+        let currentChat = null; // { id: string, type: 'group'|'private', name: string }
+        let contacts = []; // 所有联系人(群组和用户)
+        let users = []; // 所有用户
+        let socket = null;
+        
+        // 检查登录状态
+        if (!currentUser.id  || !currentUser.username)  {
+            window.location.href  = 'index.html'; 
+        }
+        
+        // DOM元素 
+        const contactListEl = document.getElementById('contact-list'); 
+        const messagesContainerEl = document.getElementById('messages-container'); 
+        const currentChatTitleEl = document.getElementById('current-chat-title'); 
+        const currentChatTypeEl = document.getElementById('current-chat-type'); 
+        const messageInputEl = document.getElementById('message-input'); 
+        const sendBtnEl = document.getElementById('send-btn'); 
+        const chatTabEl = document.getElementById('chat-tab'); 
+        const contactTabEl = document.getElementById('contact-tab'); 
+        const newGroupModalEl = document.getElementById('new-group-modal'); 
+        const groupNameInputEl = document.getElementById('group-name-input'); 
+        const userListContainerEl = document.getElementById('user-list-container'); 
+        const createGroupBtnEl = document.getElementById('create-group-btn'); 
+        const cancelGroupBtnEl = document.getElementById('cancel-group-btn'); 
+        const searchInputEl = document.getElementById('search-input'); 
+        
+        // 初始化WebSocket连接 
+        function initWebSocket() {
+            socket = new WebSocket(`wss://your-glitch-project.glitch.me/chat?token=${localStorage.getItem('token')}`); 
+            
+            socket.onopen  = function() {
+                console.log('WebSocket 连接已建立');
+                // 加载联系人列表
+                loadContacts();
+                loadUsers();
+            };
+            
+            socket.onmessage  = function(event) {
+                const data = JSON.parse(event.data); 
+                
+                switch(data.type)  {
+                    case 'message':
+                        handleNewMessage(data);
+                        break;
+                    case 'group_created':
+                        handleGroupCreated(data.group); 
+                        break;
+                    case 'user_joined':
+                        handleUserJoined(data.userId,  data.groupId); 
+                        break;
+                    case 'user_left':
+                        handleUserLeft(data.userId,  data.groupId); 
+                        break;
+                    case 'error':
+                        console.error('WebSocket 错误:', data.message); 
+                        break;
+                }
+            };
+            
+            socket.onclose  = function() {
+                console.log('WebSocket 连接已关闭');
+                // 尝试重新连接
+                setTimeout(initWebSocket, 5000);
+            };
+            
+            socket.onerror  = function(error) {
+                console.error('WebSocket 错误:', error);
+            };
+        }
+        
+        // 加载联系人列表 
+        async function loadContacts() {
+            try {
+                const response = await fetch(`https://your-glitch-project.glitch.me/contacts`,  {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                    }
+                });
+                
+                if (response.ok)  {
+                    contacts = await response.json(); 
+                    renderContactList();
+                } else {
+                    console.error(' 加载联系人失败');
+                }
+            } catch (error) {
+                console.error(' 加载联系人错误:', error);
+            }
+        }
+        
+        // 加载所有用户 
+        async function loadUsers() {
+            try {
+                const response = await fetch(`https://your-glitch-project.glitch.me/users`,  {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                    }
+                });
+                
+                if (response.ok)  {
+                    users = await response.json(); 
+                } else {
+                    console.error(' 加载用户列表失败');
+                }
+            } catch (error) {
+                console.error(' 加载用户列表错误:', error);
+            }
+        }
+        
+        // 渲染联系人列表
+        function renderContactList(filter = '') {
+            contactListEl.innerHTML  = '';
+            
+            // 添加"新建群聊"按钮
+            if (chatTabEl.classList.contains('active'))  {
+                const newGroupItem = document.createElement('div'); 
+                newGroupItem.className  = 'contact';
+                newGroupItem.innerHTML  = `
+                    <div class="contact-avatar">+</div>
+                    <div class="contact-info">
+                        <div class="contact-name">新建群聊</div>
+                    </div>
+                `;
+                newGroupItem.addEventListener('click',  showNewGroupModal);
+                contactListEl.appendChild(newGroupItem); 
+            }
+            
+            // 过滤联系人 
+            const filteredContacts = contacts.filter(contact  => 
+                contact.name.toLowerCase().includes(filter.toLowerCase()) 
+            );
+            
+            // 渲染联系人 
+            filteredContacts.forEach(contact  => {
+                const contactItem = document.createElement('div'); 
+                contactItem.className  = `contact ${currentChat && currentChat.id  === contact.id  ? 'active' : ''}`;
+                
+                // 获取最后一条消息 
+                let lastMsg = contact.lastMessage  || '暂无消息';
+                if (lastMsg.length  > 15) {
+                    lastMsg = lastMsg.substring(0,  15) + '...';
+                }
+                
+                contactItem.innerHTML  = `
+                    <div class="contact-avatar ${contact.type  === 'group' ? 'group-avatar' : ''}">
+                        ${contact.name.charAt(0).toUpperCase()} 
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-name">${contact.name}</div> 
+                        <div class="contact-lastmsg">${lastMsg}</div>
+                    </div>
+                    ${contact.lastMessageTime  ? `<div class="contact-time">${formatTime(contact.lastMessageTime)}</div>`  : ''}
+                `;
+                
+                contactItem.addEventListener('click',  () => switchChat(contact));
+                contactListEl.appendChild(contactItem); 
+            });
+        }
+        
+        // 切换聊天
+        function switchChat(chat) {
+            currentChat = chat;
+            renderContactList(searchInputEl.value); 
+            
+            // 更新聊天标题
+            currentChatTitleEl.textContent  = chat.name; 
+            currentChatTypeEl.textContent  = chat.type  === 'group' ? '群聊' : '私聊';
+            
+            // 加载消息历史 
+            loadMessages(chat.id,  chat.type); 
+        }
+        
+        // 加载消息历史 
+        async function loadMessages(chatId, chatType) {
+            try {
+                const response = await fetch(`https://your-glitch-project.glitch.me/messages?chatId=${chatId}&chatType=${chatType}`,  {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                    }
+                });
+                
+                if (response.ok)  {
+                    const messages = await response.json(); 
+                    renderMessages(messages);
+                } else {
+                    console.error(' 加载消息失败');
+                }
+            } catch (error) {
+                console.error(' 加载消息错误:', error);
+            }
+        }
+        
+        // 渲染消息
+        function renderMessages(messages) {
+            messagesContainerEl.innerHTML  = '';
+            
+            if (messages.length  === 0) {
+                messagesContainerEl.innerHTML  = `
+                    <div style="text-align: center; color: #666; margin-top: 50px;">
+                        暂无消息，开始聊天吧 
+                    </div>
+                `;
+                return;
+            }
+            
+            messages.forEach(message  => {
+                const isCurrentUser = message.senderId  === currentUser.id; 
+                const messageEl = document.createElement('div'); 
+                messageEl.className  = `message ${isCurrentUser ? 'message-sent' : 'message-received'}`;
+                
+                // 如果不是当前用户发送的消息，显示发送者名称 
+                const senderName = isCurrentUser ? '我' : message.senderName; 
+                
+                messageEl.innerHTML  = `
+                    ${!isCurrentUser ? `<div class="message-sender">${senderName}</div>` : ''}
+                    <div class="message-content">${message.content}</div> 
+                    <div class="message-time">${formatTime(message.timestamp)}</div> 
+                `;
+                
+                messagesContainerEl.appendChild(messageEl); 
+            });
+            
+            // 滚动到底部 
+            messagesContainerEl.scrollTop  = messagesContainerEl.scrollHeight; 
+        }
+        
+        // 处理新消息 
+        function handleNewMessage(message) {
+            // 如果是当前聊天中的消息，直接显示 
+            if (currentChat && (
+                (message.chatType  === 'group' && message.groupId  === currentChat.id)  ||
+                (message.chatType  === 'private' && (
+                    message.senderId  === currentChat.id  || 
+                    message.receiverId  === currentChat.id  
+                ))
+            )) {
+                const isCurrentUser = message.senderId  === currentUser.id; 
+                const messageEl = document.createElement('div'); 
+                messageEl.className  = `message ${isCurrentUser ? 'message-sent' : 'message-received'}`;
+                
+                const senderName = isCurrentUser ? '我' : message.senderName; 
+                
+                messageEl.innerHTML  = `
+                    ${!isCurrentUser ? `<div class="message-sender">${senderName}</div>` : ''}
+                    <div class="message-content">${message.content}</div> 
+                    <div class="message-time">${formatTime(message.timestamp)}</div> 
+                `;
+                
+                messagesContainerEl.appendChild(messageEl); 
+                messagesContainerEl.scrollTop  = messagesContainerEl.scrollHeight; 
+            }
+            
+            // 更新联系人列表中的最后一条消息
+            const contact = contacts.find(c  => 
+                (message.chatType  === 'group' && c.id  === message.groupId)  ||
+                (message.chatType  === 'private' && (
+                    c.id  === message.senderId  || 
+                    c.id  === message.receiverId 
+                ))
+            );
+            
+            if (contact) {
+                contact.lastMessage  = message.content; 
+                contact.lastMessageTime  = message.timestamp; 
+                renderContactList(searchInputEl.value); 
+            }
+        }
+        
+        // 发送消息 
+        async function sendMessage() {
+            const content = messageInputEl.value.trim(); 
+            if (!content || !currentChat) return;
+            
+            const message = {
+                type: 'message',
+                chatType: currentChat.type, 
+                chatId: currentChat.id, 
+                content: content,
+                senderId: currentUser.id, 
+                senderName: currentUser.username, 
+                timestamp: new Date().toISOString()
+            };
+            
+            // 如果是私聊，设置接收者ID
+            if (currentChat.type  === 'private') {
+                message.receiverId  = currentChat.id; 
+            } else {
+                message.groupId  = currentChat.id; 
+            }
+            
+            try {
+                // 通过WebSocket发送消息 
+                socket.send(JSON.stringify(message)); 
+                
+                // 清空输入框
+                messageInputEl.value  = '';
+                
+                // 更新最后一条消息 
+                const contact = contacts.find(c  => c.id  === currentChat.id); 
+                if (contact) {
+                    contact.lastMessage  = content;
+                    contact.lastMessageTime  = message.timestamp; 
+                    renderContactList(searchInputEl.value); 
+                }
+            } catch (error) {
+                console.error(' 发送消息错误:', error);
+            }
+        }
+        
+        // 显示新建群聊弹窗 
+        function showNewGroupModal() {
+            // 渲染用户列表 
+            userListContainerEl.innerHTML  = '';
+            users
+                .filter(user => user.id  !== currentUser.id)  // 排除自己
+                .forEach(user => {
+                    const userItem = document.createElement('div'); 
+                    userItem.className  = 'user-checkbox';
+                    userItem.innerHTML  = `
+                        <input type="checkbox" id="user-${user.id}"  value="${user.id}"> 
+                        <label for="user-${user.id}">${user.username}</label> 
+                    `;
+                    userListContainerEl.appendChild(userItem); 
+                });
+            
+            // 清空群名输入框
+            groupNameInputEl.value  = '';
+            
+            // 显示弹窗
+            newGroupModalEl.style.display  = 'flex';
+        }
+        
+        // 创建新群组 
+        async function createGroup() {
+            const groupName = groupNameInputEl.value.trim(); 
+            if (!groupName) {
+                alert('请输入群聊名称');
+                return;
+            }
+            
+            // 获取选中的用户ID 
+            const selectedUsers = Array.from(document.querySelectorAll('#user-list-container  input[type="checkbox"]:checked'))
+                .map(checkbox => checkbox.value); 
+            
+            if (selectedUsers.length  === 0) {
+                alert('请至少选择一个成员');
+                return;
+            }
+            
+            try {
+                const response = await fetch('https://your-glitch-project.glitch.me/groups',  {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                    },
+                    body: JSON.stringify({ 
+                        name: groupName,
+                        members: selectedUsers 
+                    })
+                });
+                
+                if (response.ok)  {
+                    const group = await response.json(); 
+                    handleGroupCreated(group);
+                    newGroupModalEl.style.display  = 'none';
+                } else {
+                    const error = await response.json(); 
+                    alert(error.message  || '创建群聊失败');
+                }
+            } catch (error) {
+                console.error(' 创建群聊错误:', error);
+                alert('网络错误，请稍后重试');
+           
