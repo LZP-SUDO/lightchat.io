@@ -118,7 +118,7 @@
 </head>
 <body>
     <div class="auth-container">
-        <div class="logo">lightchat</div>
+        <div class="logo">lightchat 多群聊聊天网站</div>
         
         <div class="tabs">
             <button class="tab active" id="login-tab">登录</button>
@@ -142,7 +142,7 @@
     </div>
  
     <script>
-        // 切换登录/注册标签页 
+        // 切换登录/注册标签页
         document.getElementById('login-tab').addEventListener('click',  function() {
             document.getElementById('login-tab').classList.add('active'); 
             document.getElementById('register-tab').classList.remove('active'); 
@@ -182,6 +182,7 @@
                 if (response.ok)  {
                     localStorage.setItem('token',  data.token); 
                     localStorage.setItem('username',  username);
+                    localStorage.setItem('userId',  data.userId); 
                     window.location.href  = 'chat.html'; 
                 } else {
                     errorElement.textContent  = data.message  || '登录失败';
@@ -192,7 +193,7 @@
             }
         });
         
-        // 注册功能 
+        // 注册功能
         document.getElementById('register-btn').addEventListener('click',  async function() {
             const username = document.getElementById('register-username').value.trim(); 
             const password = document.getElementById('register-password').value; 
